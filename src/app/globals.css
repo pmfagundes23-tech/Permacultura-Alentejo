@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background-color: #f5f5dc; /* bege */
+  color: #3e4f22;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* Scrollbar discreta, tom terra */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: #8b451380;
+  border-radius: 999px;
+}
+
+/* Área segura para dispositivos com "notch" / gestos (iOS) */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Animação simples para os "três pontos" de digitação do Oráculo */
+@keyframes bounce-dot {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  40% {
+    transform: translateY(-4px);
+    opacity: 1;
+  }
+}
+.dot-bounce {
+  animation: bounce-dot 1.2s infinite ease-in-out;
+}
+
+/* Conteúdo Markdown dos guias */
+.guia-conteudo h2 {
+  color: #556b2f;
+  font-weight: 700;
+  font-size: 1.15rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+.guia-conteudo p {
+  margin-bottom: 0.75rem;
+  line-height: 1.6;
+}
+.guia-conteudo ul,
+.guia-conteudo ol {
+  margin: 0.5rem 0 1rem 1.25rem;
+  line-height: 1.6;
+}
+.guia-conteudo ul {
+  list-style: disc;
+}
+.guia-conteudo ol {
+  list-style: decimal;
+}
+.guia-conteudo strong {
+  color: #6b3410;
+}
+.guia-conteudo blockquote {
+  border-left: 4px solid #556b2f;
+  background: #e6dfd5;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  margin: 1rem 0;
+  font-size: 0.95rem;
+}
+.guia-conteudo table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+.guia-conteudo th,
+.guia-conteudo td {
+  border: 1px solid #d8cfc0;
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+.guia-conteudo th {
+  background: #e6dfd5;
+}
