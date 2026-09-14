@@ -1,16 +1,71 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ChevronDown, Search, Droplets, Sprout, X } from "lucide-react";
-import { PLANTAS, CAMADAS_GRUPO, NIVEIS_SECA, ZONAS_PERMACULTURA } from "@/data/plantas";
-import { CamadaGrupo, Planta, ToleranciaSeca } from "@/types";
+import { ChevronDown, Droplets, Search, Sprout, X } from "lucide-react";
+import { PLANTS } from "@/data/plantas-v2";
+import { DroughtTolerance, Month, Plant, PlantFunction, PlantLayer } from "@/types/schema";
+
+const LAYER_OPTIONS: PlantLayer[] = [
+  "dossel",
+  "sub-bosque",
+  "arbustiva",
+  "herbácea",
+  "cobertura do solo",
+  "rizosfera (raiz)",
+  "trepadeira",
+];
+
+const DROUGHT_OPTIONS: DroughtTolerance[] = ["muito alta", "alta", "média", "baixa", "nenhuma"];
+
+const FUNCTION_OPTIONS: PlantFunction[] = [
+  "alimento humano",
+  "fixadora de azoto",
+  "quebra-vento",
+  "acumuladora dinâmica",
+  "atrai polinizadores",
+  "atrai predadores de pragas",
+  "repelente de pragas",
+  "cobertura do solo",
+  "forragem para animais",
+  "medicinal",
+  "lenha",
+  "material de construção",
+  "fixação de solo e controlo de erosão",
+  "quebra-fogo",
+  "planta pioneira",
+  "sombra",
+];
+
+const NOMES_MES: Record<Month, string> = {
+  1: "Janeiro",
+  2: "Fevereiro",
+  3: "Março",
+  4: "Abril",
+  5: "Maio",
+  6: "Junho",
+  7: "Julho",
+  8: "Agosto",
+  9: "Setembro",
+  10: "Outubro",
+  11: "Novembro",
+  12: "Dezembro",
+};
+const MESES: Month[] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+function mesesDePlantio(planta: Plant): Month[] {
+  const c = planta.calendar;
+  if (!c) return [];
+  const todos = [...(c.sow_direct ?? []), ...(c.sow_nursery ?? []), ...(c.transplant ?? [])];
+  return Array.from(new Set(todos));
+}
 
 export default function ExploradorPlantas() {
   const [pesquisa, setPesquisa] = useState("");
-  const [camadasAtivas, setCamadasAtivas] = useState<CamadaGrupo[]>([]);
-  const [secaAtiva, setSecaAtiva] = useState<ToleranciaSeca[]>([]);
-  const [zonaAtiva, setZonaAtiva] = useState<number[]>([]);
-  const [expandidoId, setExpandidoId] = useState<number | null>(null);
+  const [estratosAtivos, setEstratosAtivos] = useState<PlantLayer[]>([]);
+  const [funcoesAtivas, setFuncoesAtivas] = useState<PlantFunction[]>([]);
+  const [secaAtiva, setSecaAtiva] = useState<DroughtTolerance[]>([]);
+  const [mesAtivo, setMesAtivo] = useState<Month | null>(null);
+  const [expandidoId, setExpandidoId] = useState<string | null>(null);
 
   function alternar<T>(lista: T[], valor: T, setLista: (v: T[]) => void) {
     setLista(lista.includes(valor) ? lista.filter((v) => v !== valor) : [...lista, valor]);
@@ -18,31 +73,31 @@ export default function ExploradorPlantas() {
 
   const plantasFiltradas = useMemo(() => {
     const termo = pesquisa.trim().toLowerCase();
-    return PLANTAS.filter((planta) => {
+    return PLANTS.filter((planta) => {
       const bateTermo =
         !termo ||
-        planta.nome_comum.toLowerCase().includes(termo) ||
-        planta.nome_cientifico.toLowerCase().includes(termo);
-      const bateCamada = camadasAtivas.length === 0 || camadasAtivas.includes(planta.camada_grupo);
-      const bateSeca = secaAtiva.length === 0 || secaAtiva.includes(planta.tolerancia_seca);
-      const bateZona =
-        zonaAtiva.length === 0 || planta.zona_permacultura.some((z) => zonaAtiva.includes(z));
-      return bateTermo && bateCamada && bateSeca && bateZona;
+        planta.common_name_pt.toLowerCase().includes(termo) ||
+        planta.scientific_name.toLowerCase().includes(termo);
+      const bateEstrato = estratosAtivos.length === 0 || estratosAtivos.includes(planta.layer);
+      const bateFuncao = funcoesAtivas.length === 0 || planta.functions.some((f) => funcoesAtivas.includes(f));
+      const bateSeca = secaAtiva.length === 0 || secaAtiva.includes(planta.drought_tolerance);
+      const bateMes = mesAtivo === null || mesesDePlantio(planta).includes(mesAtivo);
+      return bateTermo && bateEstrato && bateFuncao && bateSeca && bateMes;
     });
-  }, [pesquisa, camadasAtivas, secaAtiva, zonaAtiva]);
+  }, [pesquisa, estratosAtivos, funcoesAtivas, secaAtiva, mesAtivo]);
 
-  const filtrosAtivos = camadasAtivas.length + secaAtiva.length + zonaAtiva.length;
+  const filtrosAtivos = estratosAtivos.length + funcoesAtivas.length + secaAtiva.length + (mesAtivo ? 1 : 0);
 
   function limparFiltros() {
-    setCamadasAtivas([]);
+    setEstratosAtivos([]);
+    setFuncoesAtivas([]);
     setSecaAtiva([]);
-    setZonaAtiva([]);
+    setMesAtivo(null);
   }
 
   return (
     <div className="flex h-full flex-col">
       <div className="space-y-3 border-b border-terra/15 bg-bege px-4 py-3">
-        {/* Pesquisa */}
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-terra-dark/40" />
           <input
@@ -62,32 +117,51 @@ export default function ExploradorPlantas() {
           )}
         </div>
 
-        {/* Filtros */}
         <GrupoFiltro
-          titulo="Camada"
-          opcoes={CAMADAS_GRUPO}
-          selecionados={camadasAtivas}
-          onToggle={(v) => alternar(camadasAtivas, v as CamadaGrupo, setCamadasAtivas)}
+          titulo="Estrato"
+          opcoes={LAYER_OPTIONS}
+          selecionados={estratosAtivos}
+          onToggle={(v) => alternar(estratosAtivos, v, setEstratosAtivos)}
+        />
+        <GrupoFiltro
+          titulo="Função"
+          opcoes={FUNCTION_OPTIONS}
+          selecionados={funcoesAtivas}
+          onToggle={(v) => alternar(funcoesAtivas, v, setFuncoesAtivas)}
         />
         <GrupoFiltro
           titulo="Tolerância à Seca"
-          opcoes={NIVEIS_SECA}
+          opcoes={DROUGHT_OPTIONS}
           selecionados={secaAtiva}
-          onToggle={(v) => alternar(secaAtiva, v as ToleranciaSeca, setSecaAtiva)}
+          onToggle={(v) => alternar(secaAtiva, v, setSecaAtiva)}
         />
-        <GrupoFiltro
-          titulo="Zona Permacultural"
-          opcoes={ZONAS_PERMACULTURA.map((z) => `Zona ${z}`)}
-          selecionados={zonaAtiva.map((z) => `Zona ${z}`)}
-          onToggle={(rotulo) => {
-            const zona = Number(rotulo.replace("Zona ", ""));
-            alternar(zonaAtiva, zona, setZonaAtiva);
-          }}
-        />
+
+        <div>
+          <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-terra-dark/50">
+            Época de plantio
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {MESES.map((mes) => {
+              const ativo = mesAtivo === mes;
+              return (
+                <button
+                  key={mes}
+                  type="button"
+                  onClick={() => setMesAtivo(ativo ? null : mes)}
+                  className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
+                    ativo ? "border-oliva bg-oliva text-bege" : "border-terra/20 bg-white text-terra-dark/70"
+                  }`}
+                >
+                  {NOMES_MES[mes].slice(0, 3)}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <div className="flex items-center justify-between text-xs text-terra-dark/60">
           <span>
-            {plantasFiltradas.length} de {PLANTAS.length} espécies
+            {plantasFiltradas.length} de {PLANTS.length} espécies
           </span>
           {filtrosAtivos > 0 && (
             <button onClick={limparFiltros} className="font-medium text-terra underline">
@@ -97,7 +171,6 @@ export default function ExploradorPlantas() {
         </div>
       </div>
 
-      {/* Lista de cards */}
       <div className="flex-1 space-y-2.5 overflow-y-auto px-4 py-3">
         {plantasFiltradas.length === 0 && (
           <p className="mt-8 text-center text-sm text-terra-dark/50">
@@ -117,16 +190,16 @@ export default function ExploradorPlantas() {
   );
 }
 
-function GrupoFiltro({
+function GrupoFiltro<T extends string>({
   titulo,
   opcoes,
   selecionados,
   onToggle,
 }: {
   titulo: string;
-  opcoes: string[];
-  selecionados: string[];
-  onToggle: (opcao: string) => void;
+  opcoes: T[];
+  selecionados: T[];
+  onToggle: (opcao: T) => void;
 }) {
   return (
     <div>
@@ -142,9 +215,7 @@ function GrupoFiltro({
               type="button"
               onClick={() => onToggle(opcao)}
               className={`rounded-full border px-2.5 py-1 text-xs font-medium transition ${
-                ativo
-                  ? "border-oliva bg-oliva text-bege"
-                  : "border-terra/20 bg-white text-terra-dark/70"
+                ativo ? "border-oliva bg-oliva text-bege" : "border-terra/20 bg-white text-terra-dark/70"
               }`}
             >
               {opcao}
@@ -156,12 +227,12 @@ function GrupoFiltro({
   );
 }
 
-const CORES_SECA: Record<ToleranciaSeca, string> = {
-  Extrema: "bg-terra text-bege",
-  "Muito Alta": "bg-terra-light text-bege",
-  Alta: "bg-oliva text-bege",
-  Média: "bg-areia text-terra-dark",
-  Baixa: "bg-areia text-terra-dark",
+const CORES_SECA: Record<DroughtTolerance, string> = {
+  "muito alta": "bg-terra text-bege",
+  alta: "bg-terra-light text-bege",
+  média: "bg-oliva text-bege",
+  baixa: "bg-areia text-terra-dark",
+  nenhuma: "bg-areia text-terra-dark",
 };
 
 function CardPlanta({
@@ -169,10 +240,11 @@ function CardPlanta({
   expandido,
   onClick,
 }: {
-  planta: Planta;
+  planta: Plant;
   expandido: boolean;
   onClick: () => void;
 }) {
+  const meses = mesesDePlantio(planta);
   return (
     <div className="overflow-hidden rounded-xl2 border border-terra/10 bg-white shadow-soft">
       <button onClick={onClick} className="flex w-full items-center gap-3 px-4 py-3 text-left">
@@ -180,13 +252,13 @@ function CardPlanta({
           <Sprout className="h-5 w-5 text-oliva" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm font-semibold text-terra-dark">{planta.nome_comum}</p>
-          <p className="truncate text-xs italic text-terra-dark/50">{planta.nome_cientifico}</p>
+          <p className="truncate text-sm font-semibold text-terra-dark">{planta.common_name_pt}</p>
+          <p className="truncate text-xs italic text-terra-dark/50">{planta.scientific_name}</p>
         </div>
         <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${CORES_SECA[planta.tolerancia_seca]}`}
+          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${CORES_SECA[planta.drought_tolerance]}`}
         >
-          {planta.tolerancia_seca}
+          {planta.drought_tolerance}
         </span>
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-terra-dark/40 transition-transform ${
@@ -198,41 +270,52 @@ function CardPlanta({
       {expandido && (
         <div className="space-y-3 border-t border-terra/10 bg-areia/40 px-4 py-3 text-sm">
           <div className="flex flex-wrap gap-2">
-            <Etiqueta texto={`Camada: ${planta.camada}`} />
-            <Etiqueta texto={`Zonas: ${planta.zona_permacultura.join(", ")}`} />
+            <Etiqueta texto={`Estrato: ${planta.layer}`} />
+            {planta.recommended_zone && planta.recommended_zone.length > 0 && (
+              <Etiqueta texto={`Zonas: ${planta.recommended_zone.join(", ")}`} />
+            )}
+            {planta.protected_status && <Etiqueta texto="⚠️ Espécie protegida (ICNF)" />}
           </div>
 
-          <div className="flex items-start gap-2 text-terra-dark/80">
-            <Droplets className="mt-0.5 h-4 w-4 shrink-0 text-oliva" />
-            <span>
-              <strong className="text-terra-dark">Rega:</strong> {planta.necessidade_rega}
-            </span>
-          </div>
+          {planta.water_need && (
+            <div className="flex items-start gap-2 text-terra-dark/80">
+              <Droplets className="mt-0.5 h-4 w-4 shrink-0 text-oliva" />
+              <span>
+                <strong className="text-terra-dark">Necessidade de água:</strong> {planta.water_need}
+              </span>
+            </div>
+          )}
 
           <div>
             <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-terra-dark/50">
-              Funções ecológicas
+              Funções no sistema
             </p>
             <ul className="list-inside list-disc space-y-0.5 text-terra-dark/80">
-              {planta.funcoes_ecologicas.map((f) => (
+              {planta.functions.map((f) => (
                 <li key={f}>{f}</li>
               ))}
             </ul>
           </div>
 
-          <div>
-            <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-terra-dark/50">
-              Usos humanos
+          {meses.length > 0 && (
+            <p className="text-terra-dark/80">
+              <strong className="text-terra-dark">Época de plantio:</strong>{" "}
+              {meses
+                .sort((a, b) => a - b)
+                .map((m) => NOMES_MES[m])
+                .join(", ")}
             </p>
-            <ul className="list-inside list-disc space-y-0.5 text-terra-dark/80">
-              {planta.usos_humanos.map((u) => (
-                <li key={u}>{u}</li>
-              ))}
-            </ul>
-          </div>
+          )}
 
-          <p className="text-terra-dark/80">
-            <strong className="text-terra-dark">Época de plantio:</strong> {planta.epoca_plantio}
+          {planta.maintenance_level && (
+            <p className="text-terra-dark/80">
+              <strong className="text-terra-dark">Manutenção:</strong> {planta.maintenance_level}
+            </p>
+          )}
+
+          <p className="text-[11px] text-terra-dark/45">
+            Fontes: {planta.sources.join(" · ")}
+            {planta.confidence === "a confirmar" && " (valores a confirmar)"}
           </p>
         </div>
       )}
