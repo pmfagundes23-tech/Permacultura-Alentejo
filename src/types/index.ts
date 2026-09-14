@@ -46,18 +46,4 @@ export interface Mensagem {
   a_carregar?: boolean;
 }
 
-export type TipoTroca = "Sementes" | "Mudas" | "Ajuda em Mutirões";
-
-export interface HortaComunitaria {
-  id: string;
-  nome: string;
-  concelho: string;
-  tipo_troca: TipoTroca[];
-  descricao: string;
-  criado_em: string;
-  /** Coordenadas relativas (%) dentro do mapa estilizado, 0-100 */
-  x: number;
-  y: number;
-}
-
-export type AbaId = "oraculo" | "plantas" | "guias" | "mapa";
+export type AbaId = "oraculo" | "plantas" | "guias" | "terreno";

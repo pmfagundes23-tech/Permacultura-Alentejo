@@ -7,7 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import OraculoChat from "@/components/OraculoChat";
 import ExploradorPlantas from "@/components/ExploradorPlantas";
 import GuiasPraticos from "@/components/GuiasPraticos";
-import MapaComunitario from "@/components/MapaComunitario";
+import PerfilTerreno from "@/components/PerfilTerreno";
 
 export default function Home() {
   const [aba, setAba] = useState<AbaId>("oraculo");
@@ -20,7 +20,7 @@ export default function Home() {
         {aba === "oraculo" && <OraculoChat />}
         {aba === "plantas" && <ExploradorPlantas />}
         {aba === "guias" && <GuiasPraticos />}
-        {aba === "mapa" && <MapaComunitario />}
+        {aba === "terreno" && <PerfilTerreno />}
       </main>
 
       <BottomNav abaAtiva={aba} onChange={setAba} />

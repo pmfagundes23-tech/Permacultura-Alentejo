@@ -1,6 +1,6 @@
 "use client";
 
-import { Sparkles, Leaf, BookOpen, MapPin } from "lucide-react";
+import { Sparkles, Leaf, BookOpen, Compass } from "lucide-react";
 import { AbaId } from "@/types";
 
 interface ItemNav {
@@ -14,7 +14,7 @@ const ITENS: ItemNav[] = [
   { id: "oraculo", label: "Oráculo", Icon: Sparkles, emoji: "🔮" },
   { id: "plantas", label: "Plantas", Icon: Leaf, emoji: "🌿" },
   { id: "guias", label: "Guias", Icon: BookOpen, emoji: "📖" },
-  { id: "mapa", label: "Mapa", Icon: MapPin, emoji: "🗺️" },
+  { id: "terreno", label: "Terreno", Icon: Compass, emoji: "🧭" },
 ];
 
 export default function BottomNav({
