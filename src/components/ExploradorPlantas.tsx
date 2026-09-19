@@ -83,8 +83,11 @@ export default function ExploradorPlantas() {
     return computeAllMatches(site, PLANTS);
   }, [temPerfilUtil, site]);
 
-  function alternar<T>(lista: T[], valor: T, setLista: (v: T[]) => void) {
-    setLista(lista.includes(valor) ? lista.filter((v) => v !== valor) : [...lista, valor]);
+  // Usa a forma funcional do setState (em vez de capturar a lista atual por
+  // closure) para nunca perder um toque que chegue enquanto outro ainda
+  // está a ser processado — importante em ecrãs tácteis.
+  function alternar<T>(valor: T, setLista: React.Dispatch<React.SetStateAction<T[]>>) {
+    setLista((atual) => (atual.includes(valor) ? atual.filter((v) => v !== valor) : [...atual, valor]));
   }
 
   const plantasFiltradas = useMemo(() => {
@@ -145,19 +148,19 @@ export default function ExploradorPlantas() {
           titulo="Estrato"
           opcoes={LAYER_OPTIONS}
           selecionados={estratosAtivos}
-          onToggle={(v) => alternar(estratosAtivos, v, setEstratosAtivos)}
+          onToggle={(v) => alternar(v, setEstratosAtivos)}
         />
         <GrupoFiltro
           titulo="Função"
           opcoes={FUNCTION_OPTIONS}
           selecionados={funcoesAtivas}
-          onToggle={(v) => alternar(funcoesAtivas, v, setFuncoesAtivas)}
+          onToggle={(v) => alternar(v, setFuncoesAtivas)}
         />
         <GrupoFiltro
           titulo="Tolerância à Seca"
           opcoes={DROUGHT_OPTIONS}
           selecionados={secaAtiva}
-          onToggle={(v) => alternar(secaAtiva, v, setSecaAtiva)}
+          onToggle={(v) => alternar(v, setSecaAtiva)}
         />
 
         <div>
