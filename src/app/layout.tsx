@@ -5,7 +5,7 @@ import PwaRegister from "@/components/PwaRegister";
 export const metadata: Metadata = {
   title: "Permacultura Alentejo",
   description:
-    "Plataforma comunitária sem fins lucrativos de permacultura para o Alentejo: Oráculo IA, catálogo de plantas, guias práticos e mapeamento de trocas locais.",
+    "Ferramenta de desenho em permacultura para o Alentejo: Oráculo IA, catálogo de plantas com compatibilidade por terreno, guias práticos, princípios e perfil do teu sítio.",
   manifest: "/manifest.json",
   applicationName: "Permacultura Alentejo",
   appleWebApp: {

@@ -2,7 +2,7 @@
   "name": "permacultura-alentejo",
   "version": "1.0.0",
   "private": true,
-  "description": "PWA comunitária de Permacultura Alentejo — Oráculo IA, Explorador de Plantas, Guias Práticos e Mapeamento Comunitário.",
+  "description": "PWA de desenho em permacultura para o Alentejo — Oráculo IA, Explorador de Plantas com species_match, Guias/Bússola e Perfil do Terreno.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

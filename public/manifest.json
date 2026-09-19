@@ -1,7 +1,7 @@
 {
   "name": "Permacultura Alentejo",
   "short_name": "Perma Alentejo",
-  "description": "Plataforma comunitária sem fins lucrativos de permacultura para o Alentejo: Oráculo IA, catálogo de plantas, guias práticos e mapeamento de trocas locais.",
+  "description": "Ferramenta de desenho em permacultura para o Alentejo: Oráculo IA, catálogo de plantas com compatibilidade por terreno, guias práticos, princípios e perfil do teu sítio.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
