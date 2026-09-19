@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle, ChevronDown, Crosshair, Info } from "lucide-react";
 import { Site } from "@/types/schema";
+import { RascunhoSite, carregarSite, guardarSite } from "@/lib/site-storage";
 import {
   ACCESS_OPTIONS,
   ASPECT_OPTIONS,
@@ -25,28 +26,7 @@ import {
   YES_NO_UNKNOWN_OPTIONS,
 } from "@/data/site-opcoes";
 
-const CHAVE_LOCALSTORAGE = "permacultura-alentejo:site";
-
-type Rascunho = Partial<Site>;
-
-function novoRascunho(): Rascunho {
-  return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    created_at: new Date().toISOString(),
-  };
-}
-
-function carregarSite(): Rascunho {
-  if (typeof window === "undefined") return novoRascunho();
-  try {
-    const guardado = window.localStorage.getItem(CHAVE_LOCALSTORAGE);
-    if (!guardado) return novoRascunho();
-    const parsed = JSON.parse(guardado) as Rascunho;
-    return parsed && typeof parsed === "object" ? parsed : novoRascunho();
-  } catch {
-    return novoRascunho();
-  }
-}
+type Rascunho = RascunhoSite;
 
 type SecaoId = "identificacao" | "localizacao" | "clima" | "agua" | "solo" | "vegetacao" | "pessoa";
 
@@ -72,11 +52,7 @@ export default function PerfilTerreno() {
 
   useEffect(() => {
     if (!carregado) return;
-    try {
-      window.localStorage.setItem(CHAVE_LOCALSTORAGE, JSON.stringify(site));
-    } catch {
-      // localStorage indisponível — os dados ficam só em memória nesta sessão.
-    }
+    guardarSite(site);
   }, [site, carregado]);
 
   function atualizar<K extends keyof Site>(chave: K, valor: Site[K]) {

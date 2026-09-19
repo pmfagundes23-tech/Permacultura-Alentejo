@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ChevronDown, Droplets, Search, Sprout, X } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronDown, Compass, Droplets, Gauge, Search, Sprout, X } from "lucide-react";
 import { PLANTS } from "@/data/plantas-v2";
-import { DroughtTolerance, Month, Plant, PlantFunction, PlantLayer } from "@/types/schema";
+import { ComputedSpeciesMatch, DroughtTolerance, Month, Plant, PlantFunction, PlantLayer } from "@/types/schema";
+import { RascunhoSite, carregarSite, siteTemDadosUteis } from "@/lib/site-storage";
+import { computeAllMatches } from "@/lib/speciesMatch";
 
 const LAYER_OPTIONS: PlantLayer[] = [
   "dossel",
@@ -66,6 +68,20 @@ export default function ExploradorPlantas() {
   const [secaAtiva, setSecaAtiva] = useState<DroughtTolerance[]>([]);
   const [mesAtivo, setMesAtivo] = useState<Month | null>(null);
   const [expandidoId, setExpandidoId] = useState<string | null>(null);
+  const [site, setSite] = useState<RascunhoSite>({});
+  const [siteCarregado, setSiteCarregado] = useState(false);
+
+  useEffect(() => {
+    setSite(carregarSite());
+    setSiteCarregado(true);
+  }, []);
+
+  const temPerfilUtil = siteCarregado && siteTemDadosUteis(site);
+
+  const compatibilidades = useMemo<Map<string, ComputedSpeciesMatch> | null>(() => {
+    if (!temPerfilUtil) return null;
+    return computeAllMatches(site, PLANTS);
+  }, [temPerfilUtil, site]);
 
   function alternar<T>(lista: T[], valor: T, setLista: (v: T[]) => void) {
     setLista(lista.includes(valor) ? lista.filter((v) => v !== valor) : [...lista, valor]);
@@ -73,7 +89,7 @@ export default function ExploradorPlantas() {
 
   const plantasFiltradas = useMemo(() => {
     const termo = pesquisa.trim().toLowerCase();
-    return PLANTS.filter((planta) => {
+    const filtradas = PLANTS.filter((planta) => {
       const bateTermo =
         !termo ||
         planta.common_name_pt.toLowerCase().includes(termo) ||
@@ -84,7 +100,15 @@ export default function ExploradorPlantas() {
       const bateMes = mesAtivo === null || mesesDePlantio(planta).includes(mesAtivo);
       return bateTermo && bateEstrato && bateFuncao && bateSeca && bateMes;
     });
-  }, [pesquisa, estratosAtivos, funcoesAtivas, secaAtiva, mesAtivo]);
+
+    if (!compatibilidades) return filtradas;
+
+    return [...filtradas].sort((a, b) => {
+      const scoreA = compatibilidades.get(a.id)?.score ?? 0;
+      const scoreB = compatibilidades.get(b.id)?.score ?? 0;
+      return scoreB - scoreA;
+    });
+  }, [pesquisa, estratosAtivos, funcoesAtivas, secaAtiva, mesAtivo, compatibilidades]);
 
   const filtrosAtivos = estratosAtivos.length + funcoesAtivas.length + secaAtiva.length + (mesAtivo ? 1 : 0);
 
@@ -172,6 +196,25 @@ export default function ExploradorPlantas() {
       </div>
 
       <div className="flex-1 space-y-2.5 overflow-y-auto px-4 py-3">
+        {!temPerfilUtil && siteCarregado && (
+          <div className="mb-1 flex items-start gap-2 rounded-xl2 border border-oliva/20 bg-oliva/5 px-3 py-2.5 text-xs text-terra-dark/80">
+            <Compass className="mt-0.5 h-4 w-4 shrink-0 text-oliva" />
+            <span>
+              Preenche o teu <strong>Perfil do Terreno</strong> (aba 🧭 Terreno) para veres aqui a
+              compatibilidade de cada espécie com o teu sítio real.
+            </span>
+          </div>
+        )}
+        {temPerfilUtil && (
+          <div className="mb-1 flex items-start gap-2 rounded-xl2 border border-oliva/20 bg-oliva/5 px-3 py-2.5 text-xs text-terra-dark/80">
+            <Gauge className="mt-0.5 h-4 w-4 shrink-0 text-oliva" />
+            <span>
+              Lista ordenada pela compatibilidade com o teu Perfil do Terreno. Toca numa planta
+              para veres o porquê da pontuação.
+            </span>
+          </div>
+        )}
+
         {plantasFiltradas.length === 0 && (
           <p className="mt-8 text-center text-sm text-terra-dark/50">
             Nenhuma planta encontrada com estes filtros. 🌵
@@ -181,6 +224,7 @@ export default function ExploradorPlantas() {
           <CardPlanta
             key={planta.id}
             planta={planta}
+            match={compatibilidades?.get(planta.id) ?? null}
             expandido={expandidoId === planta.id}
             onClick={() => setExpandidoId(expandidoId === planta.id ? null : planta.id)}
           />
@@ -235,12 +279,20 @@ const CORES_SECA: Record<DroughtTolerance, string> = {
   nenhuma: "bg-areia text-terra-dark",
 };
 
+function corCompatibilidade(score: number): string {
+  if (score >= 75) return "bg-oliva text-bege";
+  if (score >= 50) return "bg-terra-light text-bege";
+  return "bg-terra text-bege";
+}
+
 function CardPlanta({
   planta,
+  match,
   expandido,
   onClick,
 }: {
   planta: Plant;
+  match: ComputedSpeciesMatch | null;
   expandido: boolean;
   onClick: () => void;
 }) {
@@ -255,11 +307,17 @@ function CardPlanta({
           <p className="truncate text-sm font-semibold text-terra-dark">{planta.common_name_pt}</p>
           <p className="truncate text-xs italic text-terra-dark/50">{planta.scientific_name}</p>
         </div>
-        <span
-          className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${CORES_SECA[planta.drought_tolerance]}`}
-        >
-          {planta.drought_tolerance}
-        </span>
+        {match ? (
+          <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${corCompatibilidade(match.score)}`}>
+            {match.score}% compatível
+          </span>
+        ) : (
+          <span
+            className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${CORES_SECA[planta.drought_tolerance]}`}
+          >
+            {planta.drought_tolerance}
+          </span>
+        )}
         <ChevronDown
           className={`h-4 w-4 shrink-0 text-terra-dark/40 transition-transform ${
             expandido ? "rotate-180" : ""
@@ -269,6 +327,19 @@ function CardPlanta({
 
       {expandido && (
         <div className="space-y-3 border-t border-terra/10 bg-areia/40 px-4 py-3 text-sm">
+          {match && (
+            <div className="rounded-lg border border-oliva/25 bg-oliva/5 p-3">
+              <p className="mb-1.5 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-oliva-dark">
+                <Gauge className="h-3.5 w-3.5" /> Porque {match.score}% de compatibilidade
+              </p>
+              <ul className="list-inside list-disc space-y-1 text-terra-dark/80">
+                {match.reasons.map((razao, i) => (
+                  <li key={i}>{razao}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="flex flex-wrap gap-2">
             <Etiqueta texto={`Estrato: ${planta.layer}`} />
             {planta.recommended_zone && planta.recommended_zone.length > 0 && (

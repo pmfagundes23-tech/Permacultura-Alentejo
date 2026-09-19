@@ -5,7 +5,7 @@ import { AbaId } from "@/types";
 
 const TITULOS: Record<AbaId, { titulo: string; subtitulo: string }> = {
   oraculo: { titulo: "Oráculo Permacultural", subtitulo: "Pergunta, o Alentejo responde" },
-  plantas: { titulo: "Explorador de Plantas", subtitulo: "30 espécies resilientes à seca" },
+  plantas: { titulo: "Explorador de Plantas", subtitulo: "50 espécies resilientes à seca" },
   guias: { titulo: "Guias Práticos", subtitulo: "Água, solo e cobertura no terreno" },
   terreno: { titulo: "Meu Terreno", subtitulo: "O teu perfil de sítio, passo a passo" },
 };
