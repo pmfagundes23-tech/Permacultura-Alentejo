@@ -20,7 +20,7 @@ export default function GuiasPraticos() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="flex gap-1.5 border-b border-terra/15 bg-bege px-4 pb-3 pt-3">
         <SeletorBotao ativo={subAba === "guias"} onClick={() => setSubAba("guias")}>
           📖 Guias Práticos
@@ -97,7 +97,7 @@ function ListaGuias({ onAbrir }: { onAbrir: (g: Guia) => void }) {
 
 function LeitorGuia({ guia, onVoltar }: { guia: Guia; onVoltar: () => void }) {
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-2 border-b border-terra/15 bg-bege px-3 py-2.5">
         <button
           onClick={onVoltar}

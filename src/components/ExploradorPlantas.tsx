@@ -123,7 +123,7 @@ export default function ExploradorPlantas() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       <div className="space-y-3 border-b border-terra/15 bg-bege px-4 py-3">
         <div className="relative">
           <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-terra-dark/40" />

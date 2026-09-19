@@ -68,7 +68,7 @@ export default function OraculoChat() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col">
       {/* Perguntas rápidas */}
       <div className="flex gap-2 overflow-x-auto px-4 py-3">
         {PERGUNTAS_RAPIDAS.map((pergunta) => (

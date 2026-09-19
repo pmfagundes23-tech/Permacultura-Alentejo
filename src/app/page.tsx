@@ -13,7 +13,7 @@ export default function Home() {
   const [aba, setAba] = useState<AbaId>("oraculo");
 
   return (
-    <div className="mx-auto flex h-dvh max-w-lg flex-col bg-bege">
+    <div className="mx-auto flex h-svh max-w-lg flex-col bg-bege">
       <Header aba={aba} />
 
       <main className="min-h-0 flex-1 pb-16">
